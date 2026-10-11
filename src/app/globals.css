@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Colours of the VJSD poster: warm paper, the logo's gold, black headings.
+   Gold-500 is the poster gold (decoration only: lines, borders, the arrow);
+   gold-600 carries white text and gold-700 is gold text, both readable (≥ 4.5:1).
+   Income is green, expenses take the red of the Yemeni flag in the logo. */
+@theme {
+  --font-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #f3f1eb;
+  --color-card: #fbfaf6;
+  --color-ink: #1b1a17;
+  --color-ink-soft: #4a4539;
+  --color-muted: #6b6453;
+  --color-line: #e5dfcf;
+  --color-line-strong: #d6ccb2;
+
+  --color-gold-50: #faf6ec;
+  --color-gold-100: #f1e7cf;
+  --color-gold-200: #e5d3a5;
+  --color-gold-300: #d5b874;
+  --color-gold-500: #ba933e;
+  --color-gold-600: #8c6c26;
+  --color-gold-700: #7f611d;
+  --color-gold-800: #5f4816;
+
+  --color-income: #1e7346;
+  --color-income-deep: #175a37;
+  --color-income-soft: #e4f1e8;
+  --color-expense: #b8121f;
+  --color-expense-deep: #940e19;
+  --color-expense-soft: #f8e5e5;
+
+  --shadow-card: 0 1px 2px rgb(60 45 15 / 0.05), 0 12px 32px -18px rgb(60 45 15 / 0.3);
+
+  --animate-flash: flash 2.4s ease-out;
+  @keyframes flash {
+    0%,
+    30% {
+      background-color: var(--color-gold-100);
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* the paper of the poster: faint hand-drawn waves */
+body {
+  min-height: 100dvh;
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% 0%, rgb(255 255 255 / 0.65), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='132' viewBox='0 0 360 132'%3E%3Cg fill='none' stroke='%23d9cfb6' stroke-width='1.1' stroke-linecap='round' opacity='.55'%3E%3Cpath d='M0 22Q45 12 90 22T180 22T270 22T360 22'/%3E%3Cpath d='M0 66Q45 78 90 66T180 66T270 66T360 66' opacity='.7'/%3E%3Cpath d='M0 110Q45 99 90 110T180 110T270 110T360 110'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:
+    100% 100%,
+    360px 132px;
+  background-attachment: fixed, scroll;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold-600);
+  outline-offset: 2px;
+}
+
+/* native dialogs: dimmed page behind, no scrolling underneath */
+dialog::backdrop {
+  background: rgb(27 26 23 / 0.45);
+}
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  body {
+    background: #fff;
+  }
+}
