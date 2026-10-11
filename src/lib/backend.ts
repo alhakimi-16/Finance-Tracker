@@ -1,4 +1,5 @@
 import { createClient, type PostgrestError, type SupabaseClient } from "@supabase/supabase-js";
+import { readConfig, type ConfigProblem } from "./config";
 import { AppError, type ErrorKind } from "./errors";
 import type { Account, Admin, Entry, EntryInput } from "./types";
 
@@ -61,21 +62,23 @@ type Row = Database["public"]["Tables"]["transactions"]["Row"];
 
 // Referenced literally so Next.js can inline them into the browser bundle at build time.
 // The key is read under each name Supabase's "Connect" dialog has used, so its lines can be pasted as they are.
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key =
+const config = readConfig(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);
 
-export const isConfigured = Boolean(url && key);
+/** Null when both values look right; otherwise the setup screen says what to fix. */
+export const configProblem: ConfigProblem | null = config.problem;
 
 let client: SupabaseClient<Database> | null = null;
 
 function sb(): SupabaseClient<Database> {
-  if (!url || !key) throw new AppError("unknown", "Supabase is not configured");
+  if (config.problem !== null) throw new AppError("unknown", `Supabase is not configured: ${config.problem}`);
   // keeps the login in localStorage; only ever created in the browser
-  client ??= createClient<Database>(url, key, {
+  client ??= createClient<Database>(config.url, config.key, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
   return client;

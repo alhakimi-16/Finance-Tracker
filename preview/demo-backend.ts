@@ -1,4 +1,5 @@
 import type * as RealBackend from "@/lib/backend";
+import type { ConfigProblem } from "@/lib/config";
 import { AppError } from "@/lib/errors";
 import { newestFirst } from "@/lib/ledger";
 import type { Account, Admin, Entry, EntryInput } from "@/lib/types";
@@ -11,7 +12,7 @@ import type * as ThisFile from "./demo-backend";
  * so no real password ever ends up in this page.
  */
 
-export const isConfigured = true;
+export const configProblem: ConfigProblem | null = null;
 
 let account: Account = null;
 let entries: Entry[] = [];

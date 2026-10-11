@@ -40,16 +40,33 @@ const de = {
   },
   setup: {
     title: "Noch nicht mit der Datenbank verbunden",
+    problems: {
+      "missing-url": "In Vercel fehlt die Variable NEXT_PUBLIC_SUPABASE_URL.",
+      "missing-key": "In Vercel fehlt die Variable NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
+      swapped: "Die beiden Werte sind vertauscht: Die URL beginnt mit https://, der Schlüssel mit sb_publishable_.",
+      "secret-key":
+        "Eingetragen ist der geheime Schlüssel (sb_secret_… oder service_role). Er ist damit öffentlich geworden: Erstelle in Supabase unter Project Settings → API Keys einen neuen geheimen Schlüssel, lösche den alten und trage in Vercel den Publishable key ein (beginnt mit sb_publishable_).",
+      "bad-url":
+        "NEXT_PUBLIC_SUPABASE_URL ist keine gültige Adresse. Sie muss so aussehen: https://abcdefgh.supabase.co",
+      "bad-key":
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY enthält Leerzeichen oder andere ungültige Zeichen. Kopiere den Publishable key noch einmal aus Supabase.",
+    },
     body: "Damit das Kassenbuch Buchungen speichern kann, braucht es eine Supabase-Datenbank. Die genauen Schritte stehen in der README des Projekts:",
     steps: [
       "Kostenloses Projekt auf supabase.com anlegen.",
       "Die Datei supabase/schema.sql im SQL Editor ausführen (vorher die eigene E-Mail-Adresse eintragen).",
-      "In Vercel die Variablen NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY eintragen und neu deployen.",
+      "In Vercel unter Settings → Environment Variables die Variablen NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY mit dem Typ „Config“ eintragen. Eine Variable vom Typ „Secret“ lässt sich nicht umstellen: löschen und neu anlegen.",
+      "Unter Deployments beim neuesten Eintrag ⋯ → Redeploy wählen. Die Werte werden beim Bauen in die Seite übernommen.",
     ],
+  },
+  crash: {
+    title: "Etwas ist schiefgelaufen",
+    body: "Bitte lade die Seite neu. Wenn das nicht hilft, schick ein Bildschirmfoto dieser Meldung an die Person, die das Kassenbuch betreut.",
   },
   login: {
     title: "Anmelden",
-    intro: "Nur für die Finanzverantwortlichen, um Buchungen zu erfassen und zu ändern. Zum Ansehen brauchst du kein Konto.",
+    intro:
+      "Nur für die Finanzverantwortlichen, um Buchungen zu erfassen und zu ändern. Zum Ansehen brauchst du kein Konto.",
     email: "E-Mail",
     password: "Passwort",
     submit: "Anmelden",
@@ -277,12 +294,28 @@ const ar: Dictionary = {
   },
   setup: {
     title: "لم يتم الربط بقاعدة البيانات بعد",
+    problems: {
+      "missing-url": "المتغير NEXT_PUBLIC_SUPABASE_URL غير موجود في Vercel.",
+      "missing-key": "المتغير NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY غير موجود في Vercel.",
+      swapped: "القيمتان متبادلتان: العنوان يبدأ بـ https:// والمفتاح يبدأ بـ sb_publishable_.",
+      "secret-key":
+        "تم إدخال المفتاح السري (sb_secret_… أو service_role)، فأصبح مكشوفًا للجميع: أنشئ في Supabase من Project Settings → API Keys مفتاحًا سريًا جديدًا واحذف القديم، ثم ضع في Vercel المفتاح Publishable key (يبدأ بـ sb_publishable_).",
+      "bad-url":
+        "قيمة NEXT_PUBLIC_SUPABASE_URL ليست عنوانًا صالحًا. يجب أن تكون بهذا الشكل: https://abcdefgh.supabase.co",
+      "bad-key":
+        "قيمة NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY تحتوي على مسافات أو رموز غير صالحة. انسخ المفتاح Publishable key من Supabase مرة أخرى.",
+    },
     body: "ليتمكن السجل المالي من حفظ العمليات يحتاج إلى قاعدة بيانات على Supabase. الخطوات بالتفصيل موجودة في ملف README الخاص بالمشروع:",
     steps: [
       "أنشئ مشروعًا مجانيًا على supabase.com.",
       "نفّذ الملف supabase/schema.sql في SQL Editor (بعد كتابة بريدك الإلكتروني فيه).",
-      "أضف المتغيرين NEXT_PUBLIC_SUPABASE_URL و NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY في Vercel ثم أعد النشر.",
+      "في Vercel من Settings → Environment Variables أضف المتغيرين NEXT_PUBLIC_SUPABASE_URL و NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY بالنوع «Config». المتغير من النوع «Secret» لا يمكن تغيير نوعه: احذفه وأضفه من جديد.",
+      "من Deployments اختر عند أحدث نشر ⋯ ثم Redeploy، لأن القيم تُدمج في الصفحة أثناء البناء.",
     ],
+  },
+  crash: {
+    title: "حدث خطأ ما",
+    body: "أعد تحميل الصفحة. إذا لم يُجدِ ذلك، أرسل صورة من هذه الرسالة إلى الشخص المسؤول عن السجل المالي.",
   },
   login: {
     title: "تسجيل الدخول",
@@ -467,7 +500,7 @@ const ar: Dictionary = {
     removeConfirm: "هل تريد فعلاً إزالة {email} من المشرفين؟ لن يتمكن بعدها من تعديل أي شيء.",
     howToTitle: "بعد ذلك أنشئ حساب الدخول",
     howTo: [
-      "افتح Supabase: Authentication ← Users ← Add user ← Create new user.",
+      "افتح Supabase: Authentication → Users → Add user → Create new user.",
       "اكتب البريد الإلكتروني وكلمة مرور مبدئية، وفعّل «Auto Confirm User».",
       "أعطِ كلمة المرور للشخص، ويمكنه بعد ذلك تغييرها هنا في «حسابي».",
     ],

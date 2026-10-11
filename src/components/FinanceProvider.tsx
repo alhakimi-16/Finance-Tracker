@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Locale } from "@/i18n/config";
 import { getDictionary, type Dictionary } from "@/i18n/dictionaries";
 import * as backend from "@/lib/backend";
+import type { ConfigProblem } from "@/lib/config";
 import { AppError } from "@/lib/errors";
 import { newestFirst } from "@/lib/ledger";
 import type { Account, Entry, EntryInput } from "@/lib/types";
@@ -23,6 +24,8 @@ type Finance = {
   locale: Locale;
   t: Dictionary;
   configured: boolean;
+  /** what is wrong with the Supabase values from Vercel, if anything */
+  configProblem: ConfigProblem | null;
   /** undefined while the saved login is being read */
   account: Account | undefined;
   /** undefined until known */
@@ -50,7 +53,8 @@ function asAppError(error: unknown): AppError {
 
 export function FinanceProvider({ locale, children }: { locale: Locale; children: ReactNode }) {
   const t = getDictionary(locale);
-  const configured = backend.isConfigured;
+  const configProblem = backend.configProblem;
+  const configured = configProblem === null;
   const [account, setAccount] = useState<Account | undefined>(undefined);
   const [adminCheck, setAdminCheck] = useState<AdminCheck | null>(null);
   const [entriesResult, setEntriesResult] = useState<EntriesResult | null>(null);
@@ -148,6 +152,7 @@ export function FinanceProvider({ locale, children }: { locale: Locale; children
       locale,
       t,
       configured,
+      configProblem,
       account,
       viewer,
       canEdit: viewer === "admin",
@@ -160,7 +165,20 @@ export function FinanceProvider({ locale, children }: { locale: Locale; children
       signIn,
       signOut,
     }),
-    [locale, t, configured, account, viewer, entriesResult, reloadEntries, saveEntry, removeEntry, signIn, signOut],
+    [
+      locale,
+      t,
+      configured,
+      configProblem,
+      account,
+      viewer,
+      entriesResult,
+      reloadEntries,
+      saveEntry,
+      removeEntry,
+      signIn,
+      signOut,
+    ],
   );
 
   return <FinanceContext value={value}>{children}</FinanceContext>;

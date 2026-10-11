@@ -34,12 +34,12 @@ export function Loading() {
   );
 }
 
-function Panel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+export function Panel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <section className={cx(card, "mx-auto max-w-lg p-6 sm:p-8")}>
       <span className="mb-4 inline-grid size-12 place-items-center rounded-2xl bg-gold-100 text-gold-700">{icon}</span>
       <h1 className="text-2xl font-black text-ink">{title}</h1>
-      <div className="mt-3 text-ink-soft">{children}</div>
+      <div className="mt-3 break-words text-ink-soft">{children}</div>
     </section>
   );
 }
@@ -117,9 +117,14 @@ export function LoginCard({ onSignedIn }: { onSignedIn?: () => void }) {
 }
 
 function Setup() {
-  const { t } = useFinance();
+  const { t, configProblem } = useFinance();
   return (
     <Panel icon={<Database aria-hidden className="size-6" />} title={t.setup.title}>
+      {configProblem && (
+        <p role="alert" className="mb-4 rounded-2xl bg-expense-soft px-4 py-2.5 text-sm font-semibold text-expense">
+          {t.setup.problems[configProblem]}
+        </p>
+      )}
       <p>{t.setup.body}</p>
       <ol className="mt-4 list-decimal space-y-2 ps-5">
         {t.setup.steps.map((step) => (
