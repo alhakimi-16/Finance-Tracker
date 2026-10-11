@@ -12,9 +12,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - Finance tracker ("Kassenbuch") for VJSD Zweigstelle 7, in German (`/de`) and Arabic (`/ar`, right-to-left).
 - Data and login live in Supabase; the browser talks to it directly with supabase-js. All access rules are
-  row level security in `supabase/schema.sql` (admins write, viewers read, nobody else sees anything).
+  row level security in `supabase/schema.sql`: everyone may read the entries (without who typed them in),
+  only admins sign in and write; the history and the admin list are admin-only.
   Changing the schema means updating that file so it still runs cleanly a second time.
 - Every user-facing text is in `src/i18n/dictionaries.ts`, in both languages. Never hard-code text in components.
 - Amounts are whole cents (integers) in the app and `numeric(12, 2)` in the database; see `src/lib/money.ts`.
 - Use logical CSS (`ms-`, `pe-`, `text-start`, `rtl:`) so layouts mirror in Arabic.
 - `npm run check` runs lint, typecheck and build.
+- `preview/` builds a one-file test version (`npm run preview`) from the real components, with an in-memory
+  `demo-backend.ts` in place of `src/lib/backend.ts`; the typecheck fails if the two stop matching.

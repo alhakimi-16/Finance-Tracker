@@ -131,13 +131,21 @@ npm run dev
 
 Open <http://localhost:3000>. It opens `/de` or `/ar` depending on the browser language.
 
-| Command          | What it does                        |
-| ---------------- | ----------------------------------- |
-| `npm run dev`    | development server with hot reload  |
-| `npm run build`  | production build (what Vercel runs) |
-| `npm run start`  | serve the production build          |
-| `npm run check`  | lint + type check + build           |
-| `npm run format` | format all files with Prettier      |
+| Command           | What it does                        |
+| ----------------- | ----------------------------------- |
+| `npm run dev`     | development server with hot reload  |
+| `npm run build`   | production build (what Vercel runs) |
+| `npm run start`   | serve the production build          |
+| `npm run check`   | lint + type check + build           |
+| `npm run format`  | format all files with Prettier      |
+| `npm run preview` | build the test version (see below)  |
+
+### Test version
+
+`npm run preview` builds `preview/dist/kassenbuch-test.html`: the whole app in a single file, with a pretend
+database that lives only in the open browser tab. It starts at 0 €, forgets everything when the page is reloaded,
+and you sign in with any e-mail address and the password `demo`. It needs no Supabase and no server, so it is
+handy for trying out changes before they go live. Printing, PDF and the CSV download only work on the real site.
 
 ## Tech
 
