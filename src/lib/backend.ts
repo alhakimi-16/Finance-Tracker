@@ -25,7 +25,14 @@ type Database = {
           updated_at: string;
           updated_by: string | null;
         };
-        Insert: { kind: "income" | "expense"; amount: string; date: string; purpose: string; category: string; comment: string };
+        Insert: {
+          kind: "income" | "expense";
+          amount: string;
+          date: string;
+          purpose: string;
+          category: string;
+          comment: string;
+        };
         Update: {
           kind?: "income" | "expense";
           amount?: string;
@@ -53,8 +60,13 @@ type Database = {
 type Row = Database["public"]["Tables"]["transactions"]["Row"];
 
 // Referenced literally so Next.js can inline them into the browser bundle at build time.
+// The key is read under each name Supabase's "Connect" dialog has used, so its lines can be pasted as they are.
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const key =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const isConfigured = Boolean(url && key);
 
@@ -123,7 +135,9 @@ export async function checkIsAdmin(): Promise<boolean> {
 // what visitors may read (who typed an entry in is for admins only)
 const PUBLIC_COLUMNS = "id,kind,amount,date,purpose,category,comment,created_at";
 
-function toEntry(row: Partial<Row> & Pick<Row, "id" | "kind" | "amount" | "date" | "purpose" | "category" | "created_at">): Entry {
+function toEntry(
+  row: Partial<Row> & Pick<Row, "id" | "kind" | "amount" | "date" | "purpose" | "category" | "created_at">,
+): Entry {
   return {
     id: row.id,
     kind: row.kind,
