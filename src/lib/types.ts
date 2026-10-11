@@ -1,5 +1,4 @@
 export type Kind = "income" | "expense";
-export type Role = "admin" | "viewer";
 
 /** One money movement, as the app works with it. */
 export type Entry = {
@@ -12,14 +11,19 @@ export type Entry = {
   category: string;
   comment: string;
   createdAt: string;
+  /** who typed it in and when it last changed: only admins get these */
   createdBy: string | null;
-  updatedAt: string;
+  updatedAt: string | null;
   updatedBy: string | null;
 };
 
 export type EntryInput = Pick<Entry, "kind" | "cents" | "date" | "purpose" | "category" | "comment">;
 
-export type Member = { email: string; role: Role; createdAt: string };
+/** A person who may sign in and change entries. */
+export type Admin = { email: string; createdAt: string };
+
+/** The signed-in person, or null for visitors. */
+export type Account = { id: string; email: string } | null;
 
 /** +cents for income, −cents for expenses */
 export function signed(entry: Pick<Entry, "kind" | "cents">): number {

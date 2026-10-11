@@ -57,11 +57,11 @@ export function byCategory(entries: Entry[], kind: Kind): CategorySum[] {
   return [...sums.values()].sort((a, b) => b.cents - a.cents);
 }
 
-/** Totals per calendar month (1-12) of the given entries. */
-export function byMonth(entries: Entry[]): Map<number, Totals> {
-  const months = new Map<number, Entry[]>();
+/** Totals per calendar month ("YYYY-MM") of the given entries. */
+export function byMonth(entries: Entry[]): Map<string, Totals> {
+  const months = new Map<string, Entry[]>();
   for (const entry of entries) {
-    const month = Number(entry.date.slice(5, 7));
+    const month = entry.date.slice(0, 7);
     months.set(month, [...(months.get(month) ?? []), entry]);
   }
   return new Map([...months].map(([month, list]) => [month, totals(list)]));

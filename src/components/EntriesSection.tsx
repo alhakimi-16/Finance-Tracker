@@ -95,7 +95,7 @@ export function EntriesSection({
   }, [entries]);
 
   function exportCsv() {
-    downloadCsv(entriesToCsv(visible, balances, t), `vjsd7-kassenbuch-${todayIso()}.csv`, locale);
+    downloadCsv(entriesToCsv(visible, balances, t, canEdit), `vjsd7-kassenbuch-${todayIso()}.csv`, locale);
   }
 
   const set = (patch: Partial<Filters>) => setFilters((current) => ({ ...current, ...patch }));
@@ -140,7 +140,7 @@ export function EntriesSection({
         <div
           role="group"
           aria-label={t.entries.kind}
-          className="flex rounded-2xl border border-line-strong bg-white p-1"
+          className="flex rounded-2xl border border-line-strong bg-field p-1"
         >
           {(["all", "income", "expense"] as const).map((kind) => (
             <button
@@ -152,9 +152,9 @@ export function EntriesSection({
                 "flex-1 rounded-xl px-3 py-1.5 text-sm font-bold whitespace-nowrap transition-colors",
                 filters.kind === kind
                   ? kind === "income"
-                    ? "bg-income text-white"
+                    ? "bg-income-strong text-white"
                     : kind === "expense"
-                      ? "bg-expense text-white"
+                      ? "bg-expense-strong text-white"
                       : "bg-gold-600 text-white"
                   : "text-ink-soft hover:bg-gold-50",
               )}

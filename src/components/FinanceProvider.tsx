@@ -1,34 +1,38 @@
 "use client";
 
-import type { Session } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Locale } from "@/i18n/config";
 import { getDictionary, type Dictionary } from "@/i18n/dictionaries";
-import { AppError, createEntry, deleteEntry, fetchEntries, fetchMyRole, updateEntry } from "@/lib/api";
+import * as backend from "@/lib/backend";
+import { AppError } from "@/lib/errors";
 import { newestFirst } from "@/lib/ledger";
-import { getSupabase, isConfigured, type Client } from "@/lib/supabase";
-import type { Entry, EntryInput, Role } from "@/lib/types";
+import type { Account, Entry, EntryInput } from "@/lib/types";
 
-/** Where the visitor stands: each status gets its own screen (see Gate). */
-export type Status = "loading" | "unconfigured" | "signed-out" | "role-error" | "no-access" | "ready";
+/**
+ * Who is looking:
+ * - "visitor": nobody signed in; can see everything, change nothing
+ * - "admin": the finance officer; can add, change and delete
+ * - "other": signed in, but not on the admin list (sees what visitors see)
+ */
+export type Viewer = "visitor" | "admin" | "other";
 
-type RoleResult = { userId: string; role: Role | null; failed: boolean };
-type EntriesResult = { userId: string; entries: Entry[]; error: AppError | null };
+type AdminCheck = { accountId: string; isAdmin: boolean };
+type EntriesResult = { entries: Entry[]; error: AppError | null };
 
 type Finance = {
   locale: Locale;
   t: Dictionary;
-  client: Client | null;
-  status: Status;
-  email: string | null;
-  role: Role | null;
+  configured: boolean;
+  /** undefined while the saved login is being read */
+  account: Account | undefined;
+  /** undefined until known */
+  viewer: Viewer | undefined;
   canEdit: boolean;
   /** newest first */
   entries: Entry[];
   entriesLoaded: boolean;
   entriesError: AppError | null;
   reloadEntries: () => Promise<void>;
-  retryRole: () => void;
   saveEntry: (input: EntryInput, id?: string) => Promise<Entry>;
   removeEntry: (id: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<"ok" | "wrong" | "failed">;
@@ -41,179 +45,122 @@ const FinanceContext = createContext<Finance | null>(null);
 const STALE_AFTER_MS = 60_000;
 
 function asAppError(error: unknown): AppError {
-  return error instanceof AppError ? error : new AppError("unknown", String(error));
+  return error instanceof AppError ? error : new AppError("network", String(error));
 }
 
 export function FinanceProvider({ locale, children }: { locale: Locale; children: ReactNode }) {
   const t = getDictionary(locale);
-  const [client] = useState(getSupabase);
-  // undefined = not known yet (Supabase reads the saved login on start)
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [roleResult, setRoleResult] = useState<RoleResult | null>(null);
+  const configured = backend.isConfigured;
+  const [account, setAccount] = useState<Account | undefined>(undefined);
+  const [adminCheck, setAdminCheck] = useState<AdminCheck | null>(null);
   const [entriesResult, setEntriesResult] = useState<EntriesResult | null>(null);
-  const [roleAttempt, setRoleAttempt] = useState(0);
   const lastLoaded = useRef(0);
-
-  const userId = session?.user.id ?? null;
-  const email = session?.user.email ?? null;
+  const latestRequest = useRef(0);
 
   useEffect(() => {
-    if (!client) return;
-    const { data } = client.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => data.subscription.unsubscribe();
-  }, [client]);
+    if (!configured) return;
+    return backend.watchAccount((next) =>
+      // a refreshed login token is the same person: keep the object, so nothing reloads
+      setAccount((current) => (current && next && current.id === next.id ? current : next)),
+    );
+  }, [configured]);
+
+  const accountId = account?.id ?? null;
 
   useEffect(() => {
-    if (!client || !userId) return;
+    if (!accountId) return;
     let cancelled = false;
-    fetchMyRole(client).then(
-      (role) => !cancelled && setRoleResult({ userId, role, failed: false }),
-      // a failed re-check (say, right after the laptop wakes up) keeps the role we already know
-      () =>
-        !cancelled &&
-        setRoleResult((previous) =>
-          previous?.userId === userId && !previous.failed ? previous : { userId, role: null, failed: true },
-        ),
+    backend.checkIsAdmin().then(
+      (isAdmin) => !cancelled && setAdminCheck({ accountId, isAdmin }),
+      // if the check fails, treat the person as a visitor rather than locking them out of reading
+      () => !cancelled && setAdminCheck((current) => current ?? { accountId, isAdmin: false }),
     );
     return () => {
       cancelled = true;
     };
-  }, [client, userId, roleAttempt]);
+  }, [accountId]);
 
-  const roleForUser = roleResult?.userId === userId ? roleResult : null;
-  const role = roleForUser?.role ?? null;
+  const viewer: Viewer | undefined =
+    account === undefined
+      ? undefined
+      : account === null
+        ? "visitor"
+        : adminCheck?.accountId !== account.id
+          ? undefined
+          : adminCheck.isAdmin
+            ? "admin"
+            : "other";
 
-  let status: Status;
-  if (!isConfigured) status = "unconfigured";
-  else if (session === undefined) status = "loading";
-  else if (!session) status = "signed-out";
-  else if (!roleForUser) status = "loading";
-  else if (roleForUser.failed) status = "role-error";
-  else if (!role) status = "no-access";
-  else status = "ready";
-
-  const loadEntries = useCallback(
-    async (forUser: string) => {
-      if (!client) return;
-      try {
-        const entries = await fetchEntries(client);
-        lastLoaded.current = Date.now();
-        setEntriesResult({ userId: forUser, entries, error: null });
-      } catch (error) {
-        setEntriesResult((previous) => ({
-          userId: forUser,
-          entries: previous?.userId === forUser ? previous.entries : [],
-          error: asAppError(error),
-        }));
-      }
-    },
-    [client],
-  );
-
-  const ready = status === "ready";
+  const loadEntries = useCallback(async (forViewer: Viewer) => {
+    const request = ++latestRequest.current;
+    try {
+      const entries = await backend.fetchEntries(forViewer === "admin");
+      if (request !== latestRequest.current) return;
+      lastLoaded.current = Date.now();
+      setEntriesResult({ entries, error: null });
+    } catch (error) {
+      if (request !== latestRequest.current) return;
+      setEntriesResult((previous) => ({ entries: previous?.entries ?? [], error: asAppError(error) }));
+    }
+  }, []);
 
   useEffect(() => {
-    if (ready && userId) void loadEntries(userId);
-  }, [ready, userId, loadEntries]);
+    if (configured && viewer) void loadEntries(viewer);
+  }, [configured, viewer, loadEntries]);
 
-  // someone else may have changed something while the tab was in the background
+  // someone may have changed something while this tab was in the background
   useEffect(() => {
-    if (!ready || !userId) return;
+    if (!configured || !viewer) return;
     const onVisible = () => {
       if (document.visibilityState !== "visible" || Date.now() - lastLoaded.current < STALE_AFTER_MS) return;
       lastLoaded.current = Date.now();
-      setRoleAttempt((n) => n + 1);
-      void loadEntries(userId);
+      void loadEntries(viewer);
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [ready, userId, loadEntries]);
-
-  const entriesForUser = entriesResult?.userId === userId ? entriesResult : null;
+  }, [configured, viewer, loadEntries]);
 
   const reloadEntries = useCallback(async () => {
-    if (userId) await loadEntries(userId);
-  }, [userId, loadEntries]);
+    if (viewer) await loadEntries(viewer);
+  }, [viewer, loadEntries]);
 
-  const retryRole = useCallback(() => setRoleAttempt((n) => n + 1), []);
+  const saveEntry = useCallback(async (input: EntryInput, id?: string) => {
+    const saved = id ? await backend.updateEntry(id, input) : await backend.createEntry(input);
+    setEntriesResult((previous) => ({
+      entries: [saved, ...(previous?.entries ?? []).filter((e) => e.id !== saved.id)].sort(newestFirst),
+      error: previous?.error ?? null,
+    }));
+    return saved;
+  }, []);
 
-  const saveEntry = useCallback(
-    async (input: EntryInput, id?: string) => {
-      if (!client || !userId) throw new AppError("unknown", "not signed in");
-      const saved = id ? await updateEntry(client, id, input) : await createEntry(client, input);
-      setEntriesResult((previous) =>
-        previous?.userId === userId
-          ? { ...previous, entries: [saved, ...previous.entries.filter((e) => e.id !== saved.id)].sort(newestFirst) }
-          : previous,
-      );
-      return saved;
-    },
-    [client, userId],
-  );
+  const removeEntry = useCallback(async (id: string) => {
+    await backend.deleteEntry(id);
+    setEntriesResult((previous) =>
+      previous ? { ...previous, entries: previous.entries.filter((e) => e.id !== id) } : previous,
+    );
+  }, []);
 
-  const removeEntry = useCallback(
-    async (id: string) => {
-      if (!client || !userId) throw new AppError("unknown", "not signed in");
-      await deleteEntry(client, id);
-      setEntriesResult((previous) =>
-        previous?.userId === userId ? { ...previous, entries: previous.entries.filter((e) => e.id !== id) } : previous,
-      );
-    },
-    [client, userId],
-  );
-
-  const signIn = useCallback(
-    async (emailInput: string, password: string) => {
-      if (!client) return "failed" as const;
-      const { error } = await client.auth.signInWithPassword({ email: emailInput.trim(), password });
-      if (!error) return "ok" as const;
-      return error.code === "invalid_credentials" ? ("wrong" as const) : ("failed" as const);
-    },
-    [client],
-  );
-
-  const signOut = useCallback(async () => {
-    if (!client) return;
-    // "local" signs out this browser only, not every device of the account
-    await client.auth.signOut({ scope: "local" });
-    setEntriesResult(null);
-    setRoleResult(null);
-  }, [client]);
+  const signIn = useCallback((email: string, password: string) => backend.signIn(email, password), []);
+  const signOut = useCallback(() => backend.signOut(), []);
 
   const value = useMemo<Finance>(
     () => ({
       locale,
       t,
-      client,
-      status,
-      email,
-      role,
-      canEdit: status === "ready" && role === "admin",
-      entries: entriesForUser?.entries ?? [],
-      entriesLoaded: entriesForUser !== null,
-      entriesError: entriesForUser?.error ?? null,
+      configured,
+      account,
+      viewer,
+      canEdit: viewer === "admin",
+      entries: entriesResult?.entries ?? [],
+      entriesLoaded: entriesResult !== null,
+      entriesError: entriesResult?.error ?? null,
       reloadEntries,
-      retryRole,
       saveEntry,
       removeEntry,
       signIn,
       signOut,
     }),
-    [
-      locale,
-      t,
-      client,
-      status,
-      email,
-      role,
-      entriesForUser,
-      reloadEntries,
-      retryRole,
-      saveEntry,
-      removeEntry,
-      signIn,
-      signOut,
-    ],
+    [locale, t, configured, account, viewer, entriesResult, reloadEntries, saveEntry, removeEntry, signIn, signOut],
   );
 
   return <FinanceContext value={value}>{children}</FinanceContext>;
@@ -226,6 +173,6 @@ export function useFinance(): Finance {
 }
 
 /** Translate an AppError into a sentence for people. */
-export function errorText(error: AppError, t: Dictionary): string {
-  return t.errors[error.kind] ?? t.errors.unknown;
+export function errorText(error: unknown, t: Dictionary): string {
+  return error instanceof AppError ? (t.errors[error.kind] ?? t.errors.unknown) : t.errors.unknown;
 }

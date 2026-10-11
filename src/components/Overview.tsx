@@ -4,7 +4,6 @@ import { ArrowDownLeft, ArrowUpRight, Minus, Plus, TriangleAlert, Wallet } from 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fill, plural } from "@/i18n/format";
-import { AppError } from "@/lib/api";
 import { formatDate, periodRange, quarterOf, todayIso } from "@/lib/dates";
 import { inRange, runningBalances, totals } from "@/lib/ledger";
 import { formatEuro } from "@/lib/money";
@@ -21,7 +20,8 @@ import { btn, card, cx, pill } from "./ui";
 type Editing = { kind: Kind; entry?: Entry } | null;
 
 export function Overview() {
-  const { locale, t, entries, entriesLoaded, entriesError, canEdit, reloadEntries, removeEntry } = useFinance();
+  const { locale, t, account, viewer, entries, entriesLoaded, entriesError, canEdit, reloadEntries, removeEntry } =
+    useFinance();
   const [editing, setEditing] = useState<Editing>(null);
   const [deleting, setDeleting] = useState<Entry | null>(null);
   const [flashId, setFlashId] = useState<string | null>(null);
@@ -44,6 +44,11 @@ export function Overview() {
 
   return (
     <>
+      {viewer === "other" && (
+        <p className="mb-6 rounded-2xl bg-gold-50 px-4 py-3 text-sm text-ink-soft ring-1 ring-gold-200 ring-inset">
+          {fill(t.notAdmin.body, { email: account?.email ?? "" })}
+        </p>
+      )}
       {entriesError && (
         <div
           role="alert"
@@ -145,7 +150,7 @@ export function Overview() {
       </p>
       {notice && (
         <div className="pointer-events-none fixed inset-x-0 bottom-6 z-10 flex justify-center px-4" aria-hidden>
-          <span className="rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-white shadow-lg">{notice}</span>
+          <span className="rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-paper shadow-lg">{notice}</span>
         </div>
       )}
 
@@ -195,7 +200,7 @@ export function Overview() {
 function QuarterCard({ entries }: { entries: Entry[] }) {
   const { locale, t } = useFinance();
   const { year, quarter } = quarterOf(todayIso());
-  const { start, end } = periodRange({ year, quarter });
+  const { start, end } = periodRange({ type: "quarter", year, quarter });
   const q = totals(inRange(entries, start, end));
   const largest = Math.max(q.income, q.expense);
   const width = (cents: number) => (largest > 0 ? `${Math.max((cents / largest) * 100, cents > 0 ? 2 : 0)}%` : "0%");
@@ -236,7 +241,7 @@ function QuarterCard({ entries }: { entries: Entry[] }) {
         </div>
       </dl>
       <Link
-        href={`/${locale}/report`}
+        href={`/${locale}/report?period=${year}-Q${quarter}`}
         className="group mt-auto inline-flex items-center gap-3 pt-6 font-bold text-gold-700 hover:text-gold-800"
       >
         {t.overview.toReport}
@@ -266,7 +271,7 @@ function ConfirmDelete({
     try {
       await onConfirm();
     } catch (e) {
-      const reason = e instanceof AppError ? errorText(e, t) : t.errors.unknown;
+      const reason = errorText(e, t);
       setError(fill(t.form.deleteFailed, { reason }));
       setBusy(false);
     }

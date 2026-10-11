@@ -13,8 +13,8 @@ const buttonLook =
 
 const buttonColors = {
   gold: "bg-gold-600 text-white hover:bg-gold-700",
-  income: "bg-income text-white hover:bg-income-deep",
-  expense: "bg-expense text-white hover:bg-expense-deep",
+  income: "bg-income-strong text-white hover:bg-income-strong-hover",
+  expense: "bg-expense-strong text-white hover:bg-expense-strong-hover",
   quiet: "border border-line-strong bg-card text-ink-soft hover:border-gold-500 hover:text-ink",
 };
 
@@ -34,7 +34,7 @@ export const iconButtonDanger =
 
 /** Border, colours and focus ring of inputs and selects, without size. */
 export const fieldLook =
-  "rounded-2xl border border-line-strong bg-white text-ink outline-none transition-colors placeholder:text-muted/80 focus:border-gold-500 focus:ring-3 focus:ring-gold-200 aria-invalid:border-expense aria-invalid:ring-expense-soft";
+  "rounded-2xl border border-line-strong bg-field text-ink outline-none transition-colors placeholder:text-muted/80 focus:border-gold-500 focus:ring-3 focus:ring-gold-200 aria-invalid:border-expense aria-invalid:ring-expense-soft";
 
 /** A full-width input or select. */
 export const field = cx(fieldLook, "h-11 w-full px-4");

@@ -26,9 +26,15 @@ function amount(cents: number): string {
  * A CSV file for Excel/LibreOffice/Google Sheets: semicolons and decimal commas (German Excel),
  * UTF-8 with BOM so umlauts and Arabic show correctly. Expenses are negative numbers.
  */
-export function entriesToCsv(entries: Entry[], balances: Map<string, number>, t: Dictionary): string {
+export function entriesToCsv(
+  entries: Entry[],
+  balances: Map<string, number>,
+  t: Dictionary,
+  withAuthors: boolean,
+): string {
   const c = t.entries.columns;
-  const header = [c.date, c.kind, c.amount, c.purpose, c.category, c.comment, c.balance, c.createdBy, c.updatedAt];
+  const header = [c.date, c.kind, c.amount, c.purpose, c.category, c.comment, c.balance];
+  if (withAuthors) header.push(c.createdBy, c.updatedAt);
   const rows = entries.map((entry) => [
     entry.date,
     entry.kind === "income" ? t.form.income : t.form.expense,
@@ -37,10 +43,9 @@ export function entriesToCsv(entries: Entry[], balances: Map<string, number>, t:
     cell(categoryName(entry.category, t)),
     cell(entry.comment),
     amount(balances.get(entry.id) ?? 0),
-    cell(entry.createdBy ?? ""),
-    localTimestamp(entry.updatedAt),
+    ...(withAuthors ? [cell(entry.createdBy ?? ""), entry.updatedAt ? localTimestamp(entry.updatedAt) : ""] : []),
   ]);
-  return "﻿" + [header.map(cell), ...rows].map((row) => row.join(";")).join("\r\n") + "\r\n";
+  return "\uFEFF" + [header.map(cell), ...rows].map((row) => row.join(";")).join("\r\n") + "\r\n";
 }
 
 export function downloadCsv(content: string, name: string, locale: Locale) {

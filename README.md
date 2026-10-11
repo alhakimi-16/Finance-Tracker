@@ -2,11 +2,12 @@
 
 Finance tracker for the **VJSD – Zweigstelle 7 Hamburg & Schleswig-Holstein**, in **German and Arabic**.
 Every euro that comes into or leaves the association's account is recorded here. The current balance on top
-updates with each entry: income in green with a +, expenses in red with a −.
+updates with each entry: income in green with a +, expenses in red with a −. Anyone with the link can look at
+the balance, the entries and the reports; only the finance officer signs in to change anything.
 
 ![Overview in German](docs/overview-de.png)
 
-<p align="center"><img src="docs/phone-ar.png" alt="Overview in Arabic on a phone" width="320"></p>
+<p align="center"><img src="docs/phone-ar.png" alt="Overview in Arabic on a phone, dark mode" width="320"></p>
 
 ## What it does
 
@@ -17,11 +18,13 @@ updates with each entry: income in green with a +, expenses in red with a −.
 - **Table of all entries** with date, purpose, category, comment, amount and the balance after each entry.
   Every entry can be **edited or deleted** (pencil and bin icons).
 - **Search and filters** (income/expenses, quarter or year, category) and a **CSV export** for Excel.
-- **Quarterly report** (Quartalsbericht / التقرير الربعي): opening balance, income and expenses by category,
-  monthly overview, closing balance and all entries of the quarter (or a whole year), ready to
-  **print or save as PDF** with a signature line.
-- **Access for the board**: you decide who may sign in. "Darf bearbeiten" (admin) may change entries,
-  "Nur lesen" (viewer) can only look. Nobody else sees anything.
+- **Reports** (Berichte / التقارير) for a **month**, a **quarter**, a **year** or **any period you choose** (from one
+  date to another): opening balance, income and expenses by category, a month-by-month overview, closing balance
+  and all entries of the period, ready to **print or save as PDF** with a signature line. Each report has its own
+  link (for example `…/de/report?period=2026-10` for October 2026) that you can send to the team.
+- **Open for the team, locked for changes**: everyone with the link can look without an account. Only admins
+  (you) sign in, and only they can add, change or delete entries.
+- **Light and dark mode**, following the phone or computer setting, with a switch at the top.
 - **History**: every change and every deletion is kept in the database, so nothing gets lost.
 - **German and Arabic** (right-to-left), works on phones, made in the colours of the VJSD logo.
 
@@ -63,22 +66,27 @@ You need two free accounts: **Supabase** (database and login) and **Vercel** (th
 If you add or change the variables later, redeploy (Vercel → Deployments → ⋯ → Redeploy): the values are built
 into the site. Without them, the site shows a "not connected yet" page with these steps.
 
-### 3. Give other board members access
+### 3. Share it with the team
 
-1. In the app, open **Zugänge**, enter their e-mail, choose "Nur lesen" or "Darf bearbeiten", and add it.
+Board members only need the link; they don't need an account. To let someone else **edit** too (for example the
+next finance officer):
+
+1. In the app, sign in, open **Konto**, and add their e-mail under **Wer darf bearbeiten?**
 2. In Supabase, create their login: **Authentication → Users → Add user → Create new user** (tick Auto Confirm User).
-3. Give them the password. They can change it in the app under **Zugänge → Mein Konto**.
+3. Give them the password. They can change it in the app under **Konto → Mein Konto**.
 
-To take access away, remove the e-mail in **Zugänge**; it takes effect immediately.
+To take the editing rights away, remove the e-mail in **Konto**; it takes effect immediately.
 
 ## Using it
 
 - **Start balance:** if the PayPal account already had money when you started, book it once as an income with
   the category _Anfangsbestand_.
+- **Sign in:** **Anmelden** at the top right. Visitors never need this.
 - **New entry:** click **+ Einnahme** or **− Ausgabe** on the overview.
 - **Fix a mistake:** pencil icon in the row; delete with the bin icon.
-- **Quarterly report:** **Quartalsbericht**, choose the quarter, then **Drucken oder als PDF speichern**
-  (in the print window choose "Save as PDF").
+- **Monthly report for the team meeting:** **Berichte → Monat**, pick the month, then either **Link kopieren** and
+  send the link to the group, or **Drucken oder als PDF speichern** (in the print window choose "Save as PDF").
+  **Quartal**, **Jahr** and **Zeitraum** (any start and end date) work the same way.
 - **Excel:** the **CSV-Export** button downloads the entries currently shown (filters apply). Amounts use decimal
   commas and semicolons, which German Excel opens directly. Expenses are negative numbers, so a sum in Excel
   gives the balance.
@@ -91,8 +99,11 @@ To take access away, remove the e-mail in **Zugänge**; it takes effect immediat
 - **Backups:** the free plan has no downloadable backups. Export the CSV each quarter and keep it with the
   quarterly report.
 - **Changed or deleted entries** can be looked up in Supabase → **Table Editor → transaction_history**.
+- **Who sees what:** anyone with the link sees the balance, all entries (amount, date, purpose, category, comment)
+  and the reports. So keep comments to what the whole team may read, and avoid members' full names or private
+  details there. Who typed an entry in, the change history and the list of admins are visible to admins only.
 - **Is the key safe to publish?** Yes. The publishable key is meant to be public. The protection is in the database
-  rules (row level security in `schema.sql`): only people on the Zugänge list can read, only admins can write.
+  rules (row level security in `schema.sql`): everyone may read, only admins can write.
   Never put the _secret_ key (`sb_secret_…`) into Vercel or this repository.
 - The site asks search engines not to list it, and it cannot be embedded in other websites.
 

@@ -3,7 +3,6 @@
 import { Minus, Plus } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { fill } from "@/i18n/format";
-import { AppError } from "@/lib/api";
 import { categoriesFor, categoryName, defaultCategory } from "@/lib/categories";
 import { formatTimestamp, isValidIsoDate, todayIso } from "@/lib/dates";
 import { formatAmountInput, MAX_CENTS, parseAmount } from "@/lib/money";
@@ -67,7 +66,7 @@ export function EntryForm({
       const saved = await saveEntry({ kind, cents, date, purpose, category, comment }, entry?.id);
       onSaved(saved);
     } catch (error) {
-      const reason = error instanceof AppError ? errorText(error, t) : t.errors.unknown;
+      const reason = errorText(error, t);
       setSaveError(fill(t.form.saveFailed, { reason }));
       setSaving(false);
     }
@@ -79,14 +78,14 @@ export function EntryForm({
       text: t.form.income,
       hint: t.form.incomeHint,
       Icon: Plus,
-      active: "border-income bg-income text-white",
+      active: "border-income-strong bg-income-strong text-white",
     },
     {
       id: "expense",
       text: t.form.expense,
       hint: t.form.expenseHint,
       Icon: Minus,
-      active: "border-expense bg-expense text-white",
+      active: "border-expense-strong bg-expense-strong text-white",
     },
   ];
 
@@ -100,7 +99,7 @@ export function EntryForm({
               key={id}
               className={cx(
                 "flex cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 py-3 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold-600",
-                kind === id ? active : "border-line-strong bg-white text-ink-soft hover:border-gold-500",
+                kind === id ? active : "border-line-strong bg-field text-ink-soft hover:border-gold-500",
               )}
             >
               <input
@@ -250,7 +249,7 @@ export function EntryForm({
             date: formatTimestamp(entry.createdAt, locale),
             who: entry.createdBy ?? t.common.unknownUser,
           })}
-          {entry.updatedAt !== entry.createdAt && (
+          {entry.updatedAt && entry.updatedAt !== entry.createdAt && (
             <>
               <br />
               {fill(t.form.updated, {

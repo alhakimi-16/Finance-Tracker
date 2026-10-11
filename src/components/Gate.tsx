@@ -6,23 +6,20 @@ import { fill } from "@/i18n/format";
 import { useFinance } from "./FinanceProvider";
 import { btn, card, cx, field, label, pill } from "./ui";
 
-/** Shows the page only when someone with access is signed in; otherwise the matching screen. */
+/** Everyone may look; this only steps in while the database isn't connected yet. */
 export function Gate({ children }: { children: ReactNode }) {
-  const { status } = useFinance();
-  switch (status) {
-    case "ready":
-      return children;
-    case "loading":
-      return <Loading />;
-    case "unconfigured":
-      return <Setup />;
-    case "signed-out":
-      return <Login />;
-    case "role-error":
-      return <RoleError />;
-    case "no-access":
-      return <NoAccess />;
-  }
+  const { configured } = useFinance();
+  return configured ? children : <Setup />;
+}
+
+/** For pages only admins use: shows the login, or explains that this account may not change anything. */
+export function AdminOnly({ children }: { children: ReactNode }) {
+  const { configured, account, viewer } = useFinance();
+  if (!configured) return <Setup />;
+  if (account === null) return <LoginCard />;
+  if (viewer === undefined) return <Loading />;
+  if (viewer !== "admin") return <NotAdmin />;
+  return children;
 }
 
 export function Loading() {
@@ -47,7 +44,8 @@ function Panel({ icon, title, children }: { icon: ReactNode; title: string; chil
   );
 }
 
-function Login() {
+/** Email and password, for the finance officer. Calls `onSignedIn` after a successful login. */
+export function LoginCard({ onSignedIn }: { onSignedIn?: () => void }) {
   const { t, signIn } = useFinance();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,18 +57,20 @@ function Login() {
     setBusy(true);
     setError(null);
     const result = await signIn(email, password);
-    if (result !== "ok") {
-      setError(result === "wrong" ? t.login.wrongCredentials : t.login.failed);
-      setBusy(false);
+    if (result === "ok") {
+      onSignedIn?.();
+      return;
     }
+    setError(result === "wrong" ? t.login.wrongCredentials : t.login.failed);
+    setBusy(false);
   }
 
   return (
     <section className={cx(card, "mx-auto max-w-md p-6 sm:p-8")}>
-      <span className={pill}>
+      <h1 className={pill}>
         <Lock aria-hidden className="size-4" />
         {t.login.title}
-      </span>
+      </h1>
       <p className="mt-4 text-ink-soft">{t.login.intro}</p>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
@@ -130,32 +130,15 @@ function Setup() {
   );
 }
 
-function NoAccess() {
-  const { t, email, signOut } = useFinance();
+export function NotAdmin() {
+  const { t, account, signOut } = useFinance();
   return (
-    <Panel icon={<ShieldAlert aria-hidden className="size-6" />} title={t.noAccess.title}>
-      <p>{fill(t.noAccess.body, { email: email ?? "" })}</p>
+    <Panel icon={<ShieldAlert aria-hidden className="size-6" />} title={t.notAdmin.title}>
+      <p>{fill(t.notAdmin.body, { email: account?.email ?? "" })}</p>
       <button type="button" onClick={() => void signOut()} className={cx(btn("quiet"), "mt-6")}>
         <LogOut aria-hidden className="size-4 rtl:-scale-x-100" />
         {t.account.signOut}
       </button>
-    </Panel>
-  );
-}
-
-function RoleError() {
-  const { t, retryRole, signOut } = useFinance();
-  return (
-    <Panel icon={<ShieldAlert aria-hidden className="size-6" />} title={t.noAccess.roleError}>
-      <p>{t.errors.network}</p>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button type="button" onClick={retryRole} className={btn("gold")}>
-          {t.common.retry}
-        </button>
-        <button type="button" onClick={() => void signOut()} className={btn("quiet")}>
-          {t.account.signOut}
-        </button>
-      </div>
     </Panel>
   );
 }

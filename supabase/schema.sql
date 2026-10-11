@@ -1,5 +1,9 @@
 -- =============================================================================
--- VJSD7 Finanzen: database schema for Supabase
+-- VJSD7 Kassenbuch: database schema for Supabase
+--
+-- Everyone with the link can see the balance, the entries and the reports.
+-- Only admins (the finance officer) sign in, and only they can add, change or
+-- delete entries.
 --
 -- How to use it: Supabase dashboard -> SQL Editor -> New query -> paste this
 -- whole file -> put your e-mail address in step 6 at the bottom -> Run.
@@ -7,17 +11,14 @@
 -- =============================================================================
 
 
--- 1. Members: who may open the app ---------------------------------------------
---    admin  = may add, edit and delete entries and manage members (finance officer)
---    viewer = may only look (for example other board members)
+-- 1. Admins: who may sign in and change entries --------------------------------
 
-create table if not exists public.members (
+create table if not exists public.admins (
   email      text primary key check (email like '%_@_%'),
-  role       text not null default 'viewer' check (role in ('admin', 'viewer')),
   created_at timestamptz not null default now()
 );
 
-create or replace function public.normalize_member_email()
+create or replace function public.normalize_admin_email()
 returns trigger
 language plpgsql
 set search_path = ''
@@ -28,28 +29,28 @@ begin
 end
 $$;
 
-drop trigger if exists normalize_member_email on public.members;
-create trigger normalize_member_email
-  before insert or update on public.members
-  for each row execute function public.normalize_member_email();
+drop trigger if exists normalize_admin_email on public.admins;
+create trigger normalize_admin_email
+  before insert or update on public.admins
+  for each row execute function public.normalize_admin_email();
 
 
--- 2. The role of the person who is signed in (null = no access) ----------------
+-- 2. Is the person who is signed in an admin? ----------------------------------
 
-create or replace function public.my_role()
-returns text
+create or replace function public.is_admin()
+returns boolean
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select m.role
-  from public.members m
-  where m.email = lower(auth.jwt() ->> 'email')
+  select exists (
+    select 1 from public.admins a where a.email = lower(auth.jwt() ->> 'email')
+  )
 $$;
 
-revoke all on function public.my_role() from public, anon;
-grant execute on function public.my_role() to authenticated;
+revoke all on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated;
 
 
 -- 3. Entries: every euro that comes in or goes out -----------------------------
@@ -142,71 +143,67 @@ create trigger log_transaction_change
 
 
 -- 5. Access rules (row level security) -----------------------------------------
---    Nobody who is not signed in sees anything. Members may read, admins may write.
+--    Visitors without login may read the entries, but not who typed them in.
+--    Admins may write. The history and the list of admins are for admins only.
 
-alter table public.members enable row level security;
+alter table public.admins enable row level security;
 alter table public.transactions enable row level security;
 alter table public.transaction_history enable row level security;
 
-revoke all on public.members, public.transactions, public.transaction_history from anon, authenticated;
+revoke all on public.admins, public.transactions, public.transaction_history from anon, authenticated;
 revoke all on sequence public.transaction_history_id_seq from anon, authenticated;
-grant select, insert, update, delete on public.members, public.transactions to authenticated;
+grant select (id, kind, amount, date, purpose, category, comment, created_at) on public.transactions to anon;
+grant select, insert, update, delete on public.transactions to authenticated;
 grant select on public.transaction_history to authenticated;
+grant select, insert, delete on public.admins to authenticated;
 
-drop policy if exists "members can read entries" on public.transactions;
-create policy "members can read entries" on public.transactions
-  for select to authenticated
-  using ((select public.my_role()) in ('admin', 'viewer'));
+drop policy if exists "everyone can read entries" on public.transactions;
+create policy "everyone can read entries" on public.transactions
+  for select to anon, authenticated
+  using (true);
 
 drop policy if exists "admins can add entries" on public.transactions;
 create policy "admins can add entries" on public.transactions
   for insert to authenticated
-  with check ((select public.my_role()) = 'admin');
+  with check ((select public.is_admin()));
 
 drop policy if exists "admins can change entries" on public.transactions;
 create policy "admins can change entries" on public.transactions
   for update to authenticated
-  using ((select public.my_role()) = 'admin')
-  with check ((select public.my_role()) = 'admin');
+  using ((select public.is_admin()))
+  with check ((select public.is_admin()));
 
 drop policy if exists "admins can delete entries" on public.transactions;
 create policy "admins can delete entries" on public.transactions
   for delete to authenticated
-  using ((select public.my_role()) = 'admin');
+  using ((select public.is_admin()));
 
-drop policy if exists "members can read the history" on public.transaction_history;
-create policy "members can read the history" on public.transaction_history
+drop policy if exists "admins can read the history" on public.transaction_history;
+create policy "admins can read the history" on public.transaction_history
   for select to authenticated
-  using ((select public.my_role()) in ('admin', 'viewer'));
+  using ((select public.is_admin()));
 
--- everyone sees their own membership; admins see and manage all of them,
--- but cannot change or remove their own (so nobody locks themselves out)
-drop policy if exists "read own membership, admins read all" on public.members;
-create policy "read own membership, admins read all" on public.members
+-- admins see and manage the list, but cannot remove themselves (so nobody locks the door behind them)
+drop policy if exists "admins can see admins" on public.admins;
+create policy "admins can see admins" on public.admins
   for select to authenticated
-  using (email = lower((select auth.jwt()) ->> 'email') or (select public.my_role()) = 'admin');
+  using ((select public.is_admin()));
 
-drop policy if exists "admins can add members" on public.members;
-create policy "admins can add members" on public.members
+drop policy if exists "admins can add admins" on public.admins;
+create policy "admins can add admins" on public.admins
   for insert to authenticated
-  with check ((select public.my_role()) = 'admin');
+  with check ((select public.is_admin()));
 
-drop policy if exists "admins can change other members" on public.members;
-create policy "admins can change other members" on public.members
-  for update to authenticated
-  using ((select public.my_role()) = 'admin' and email <> lower((select auth.jwt()) ->> 'email'))
-  with check ((select public.my_role()) = 'admin' and email <> lower((select auth.jwt()) ->> 'email'));
-
-drop policy if exists "admins can remove other members" on public.members;
-create policy "admins can remove other members" on public.members
+drop policy if exists "admins can remove other admins" on public.admins;
+create policy "admins can remove other admins" on public.admins
   for delete to authenticated
-  using ((select public.my_role()) = 'admin' and email <> lower((select auth.jwt()) ->> 'email'));
+  using ((select public.is_admin()) and email <> lower((select auth.jwt()) ->> 'email'));
 
 
 -- 6. YOUR ACCOUNT ---------------------------------------------------------------
 --    Replace the address below with the e-mail you will sign in with.
---    (Later you can add more people from inside the app.)
+--    (Later you can add more admins from inside the app.)
 
-insert into public.members (email, role)
-values ('your.email@example.com', 'admin')
-on conflict (email) do update set role = 'admin';
+insert into public.admins (email)
+values ('your.email@example.com')
+on conflict (email) do nothing;
