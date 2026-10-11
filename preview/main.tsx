@@ -9,7 +9,6 @@ import { Login } from "@/components/Login";
 import { Overview } from "@/components/Overview";
 import { Report } from "@/components/Report";
 import { localeInfo, type Locale } from "@/i18n/config";
-import { DEMO_PASSWORD } from "./demo-backend";
 import { RouterContext, type PreviewRouter } from "./router";
 
 /**
@@ -21,7 +20,7 @@ const banner: Record<Locale, { title: string; text: string; login: string; note:
   de: {
     title: "Testversion",
     text: "Nichts wird gespeichert: Neu laden setzt alles auf 0 € zurück.",
-    login: "Anmelden mit beliebiger E-Mail und dem Passwort",
+    login: "Anmelden mit deiner E-Mail und einem beliebigen Passwort: beides wird hier weder geprüft noch gespeichert.",
     note: "Drucken, PDF und Link kopieren gehen erst auf der echten Seite.",
     print:
       "In der Testversion kann nicht gedruckt werden. Auf der echten Seite öffnet sich hier das Druckfenster, in dem du auch „Als PDF speichern“ wählen kannst.",
@@ -29,7 +28,7 @@ const banner: Record<Locale, { title: string; text: string; login: string; note:
   ar: {
     title: "نسخة تجريبية",
     text: "لا يُحفظ أي شيء: إعادة تحميل الصفحة تُرجع كل شيء إلى 0 €.",
-    login: "سجّل الدخول بأي بريد إلكتروني وكلمة المرور",
+    login: "سجّل الدخول ببريدك الإلكتروني وأي كلمة مرور: لا يتم التحقق منهما ولا حفظهما هنا.",
     note: "الطباعة وملف PDF ونسخ الرابط تعمل فقط في الموقع الحقيقي.",
     print:
       "لا يمكن الطباعة في النسخة التجريبية. في الموقع الحقيقي تُفتح هنا نافذة الطباعة، ويمكنك منها أيضًا الحفظ كملف PDF.",
@@ -46,12 +45,7 @@ function Banner({ locale }: { locale: Locale }) {
           {b.title}
         </span>
         <span>{b.text}</span>
-        <span>
-          {b.login}{" "}
-          <code dir="ltr" className="rounded-md bg-card px-1.5 py-0.5 font-bold text-ink ring-1 ring-line">
-            {DEMO_PASSWORD}
-          </code>
-        </span>
+        <span>{b.login}</span>
         <span className="text-muted">{b.note}</span>
       </p>
     </div>

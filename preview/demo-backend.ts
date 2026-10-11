@@ -7,16 +7,15 @@ import type * as ThisFile from "./demo-backend";
 /**
  * A stand-in for src/lib/backend.ts that keeps everything in memory, for the test version:
  * it starts empty (balance 0 €), and reloading the page forgets every entry.
- * Any e-mail address can sign in with the password below and becomes an admin.
+ * Any e-mail address signs in with any password and becomes an admin: nothing is checked or stored,
+ * so no real password ever ends up in this page.
  */
 
-export const DEMO_PASSWORD = "demo";
 export const isConfigured = true;
 
 let account: Account = null;
 let entries: Entry[] = [];
 let admins: Admin[] = [];
-const passwords = new Map<string, string>();
 const listeners = new Set<(account: Account) => void>();
 
 const wait = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -47,8 +46,7 @@ export function watchAccount(callback: (account: Account) => void): () => void {
 export async function signIn(email: string, password: string): Promise<"ok" | "wrong" | "failed"> {
   await wait(350);
   const address = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) return "wrong";
-  if (password !== (passwords.get(address) ?? DEMO_PASSWORD)) return "wrong";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address) || password === "") return "wrong";
   if (!admins.some((admin) => admin.email === address)) admins.push({ email: address, createdAt: now() });
   account = { id: address, email: address };
   emit();
@@ -63,9 +61,7 @@ export async function signOut(): Promise<void> {
 
 export async function changePassword(password: string): Promise<string | null> {
   await wait();
-  if (!account) return "not signed in";
-  passwords.set(account.email, password);
-  return null;
+  return account && password ? null : "not signed in";
 }
 
 export async function checkIsAdmin(): Promise<boolean> {

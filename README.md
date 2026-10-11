@@ -144,8 +144,8 @@ Open <http://localhost:3000>. It opens `/de` or `/ar` depending on the browser l
 
 `npm run preview` builds `preview/dist/kassenbuch-test.html`: the whole app in a single file, with a pretend
 database that lives only in the open browser tab. It starts at 0 €, forgets everything when the page is reloaded,
-and you sign in with any e-mail address and the password `demo`. It needs no Supabase and no server, so it is
-handy for trying out changes before they go live. Printing, PDF and the CSV download only work on the real site.
+and you sign in with any e-mail address and any password (nothing is checked or stored). It needs no Supabase and no server, so it is
+handy for trying out changes before they go live. Printing and saving as PDF only work on the real site.
 
 ## Tech
 
