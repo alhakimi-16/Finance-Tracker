@@ -1,4 +1,3 @@
-import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { categoryName } from "./categories";
 import { signed, type Entry } from "./types";
@@ -46,17 +45,4 @@ export function entriesToCsv(
     ...(withAuthors ? [cell(entry.createdBy ?? ""), entry.updatedAt ? localTimestamp(entry.updatedAt) : ""] : []),
   ]);
   return "\uFEFF" + [header.map(cell), ...rows].map((row) => row.join(";")).join("\r\n") + "\r\n";
-}
-
-export function downloadCsv(content: string, name: string, locale: Locale) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.lang = locale;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -17,18 +17,22 @@ import { RouterContext, type PreviewRouter } from "./router";
  * database that lives only in this browser tab (see demo-backend.ts). Built by build.mjs.
  */
 
-const banner: Record<Locale, { title: string; text: string; login: string; note: string }> = {
+const banner: Record<Locale, { title: string; text: string; login: string; note: string; print: string }> = {
   de: {
     title: "Testversion",
     text: "Nichts wird gespeichert: Neu laden setzt alles auf 0 € zurück.",
     login: "Anmelden mit beliebiger E-Mail und dem Passwort",
-    note: "Drucken, PDF, Link kopieren und CSV-Download gehen erst auf der echten Seite.",
+    note: "Drucken, PDF und Link kopieren gehen erst auf der echten Seite.",
+    print:
+      "In der Testversion kann nicht gedruckt werden. Auf der echten Seite öffnet sich hier das Druckfenster, in dem du auch „Als PDF speichern“ wählen kannst.",
   },
   ar: {
     title: "نسخة تجريبية",
     text: "لا يُحفظ أي شيء: إعادة تحميل الصفحة تُرجع كل شيء إلى 0 €.",
     login: "سجّل الدخول بأي بريد إلكتروني وكلمة المرور",
-    note: "الطباعة وملف PDF ونسخ الرابط وتنزيل CSV تعمل فقط في الموقع الحقيقي.",
+    note: "الطباعة وملف PDF ونسخ الرابط تعمل فقط في الموقع الحقيقي.",
+    print:
+      "لا يمكن الطباعة في النسخة التجريبية. في الموقع الحقيقي تُفتح هنا نافذة الطباعة، ويمكنك منها أيضًا الحفظ كملف PDF.",
   },
 };
 
@@ -56,6 +60,7 @@ function Banner({ locale }: { locale: Locale }) {
 
 function PreviewApp() {
   const [href, setHref] = useState("/de");
+  const [printNotice, setPrintNotice] = useState(false);
   const locale: Locale = href.startsWith("/ar") ? "ar" : "de";
   const router = useMemo<PreviewRouter>(
     () => ({
@@ -73,6 +78,11 @@ function PreviewApp() {
     document.documentElement.lang = locale;
     document.documentElement.dir = localeInfo[locale].dir;
   }, [locale]);
+
+  // the artifact viewer cannot open the print dialog, so the print button explains that instead
+  useLayoutEffect(() => {
+    window.print = () => setPrintNotice(true);
+  }, []);
 
   const path = href.split("?")[0];
   const page = path.endsWith("/report") ? (
@@ -98,6 +108,16 @@ function PreviewApp() {
       <FinanceProvider locale={locale}>
         <Banner locale={locale} />
         <AppShell>{page}</AppShell>
+        {printNotice && (
+          <div role="alert" className="fixed inset-x-0 bottom-6 z-20 flex justify-center px-4">
+            <p className="flex max-w-lg items-start gap-3 rounded-2xl bg-ink px-5 py-3 text-sm font-semibold text-paper shadow-lg">
+              <span>{banner[locale].print}</span>
+              <button type="button" onClick={() => setPrintNotice(false)} className="shrink-0 font-black underline">
+                OK
+              </button>
+            </p>
+          </div>
+        )}
       </FinanceProvider>
     </RouterContext>
   );

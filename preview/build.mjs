@@ -16,6 +16,7 @@ const replacements = {
   "next/navigation": path.join(here, "next-navigation.ts"),
   "next/image": path.join(here, "next-image.tsx"),
   "@/lib/backend": path.join(here, "demo-backend.ts"),
+  "@/lib/download": path.join(here, "download.ts"),
 };
 
 const logo = await readFile(path.join(root, "public/logo.png"));
@@ -41,9 +42,12 @@ const js = await build({
     {
       name: "replace-next-and-supabase",
       setup(pluginBuild) {
-        pluginBuild.onResolve({ filter: /^(next\/(link|navigation|image)|@\/lib\/backend)$/ }, (args) => ({
-          path: replacements[args.path],
-        }));
+        pluginBuild.onResolve({ filter: /^(next\/(link|navigation|image)|@\/lib\/(backend|download))$/ }, (args) =>
+          // the preview's own download.ts still uses the real one as its fallback
+          args.importer === replacements["@/lib/download"] && args.path === "@/lib/download"
+            ? undefined
+            : { path: replacements[args.path] },
+        );
       },
     },
   ],

@@ -4,7 +4,8 @@ import { Download, Pencil, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { fill, plural } from "@/i18n/format";
 import { categories, categoryName } from "@/lib/categories";
-import { downloadCsv, entriesToCsv } from "@/lib/csv";
+import { entriesToCsv } from "@/lib/csv";
+import { downloadFile } from "@/lib/download";
 import { formatDate, quarterOf, todayIso } from "@/lib/dates";
 import { totals } from "@/lib/ledger";
 import { formatAmountInput, formatEuro } from "@/lib/money";
@@ -95,7 +96,11 @@ export function EntriesSection({
   }, [entries]);
 
   function exportCsv() {
-    downloadCsv(entriesToCsv(visible, balances, t, canEdit), `vjsd7-kassenbuch-${todayIso()}.csv`, locale);
+    void downloadFile(
+      `vjsd7-kassenbuch-${todayIso()}.csv`,
+      entriesToCsv(visible, balances, t, canEdit),
+      "text/csv;charset=utf-8",
+    );
   }
 
   const set = (patch: Partial<Filters>) => setFilters((current) => ({ ...current, ...patch }));
