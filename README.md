@@ -83,13 +83,14 @@ From now on, every change pushed to `main` goes live by itself within a few minu
 
 ### If something goes wrong
 
-| What you see                                   | What to do                                                                                                                                                                                                                    |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "Noch nicht mit der Datenbank verbunden"       | The red box says which value is wrong. Fix it in Vercel → **Settings → Environment Variables** (type **Config**; delete a Secret and add it again), then **Deployments → ⋯ → Redeploy** (the values are built into the site). |
-| "E-Mail oder Passwort stimmt nicht"            | Check in Supabase → **Authentication → Users** that the user exists and is confirmed. To set a new password, delete the user and create it again.                                                                             |
-| "Keine Bearbeitungsrechte" after signing in    | The e-mail at the end of `schema.sql` differs from the login. In the SQL Editor, run `insert into public.admins (email) values ('your@email');` with the right address.                                                       |
-| "Keine Verbindung zur Datenbank" after a while | The free Supabase project paused after a week without use. Open it on [supabase.com](https://supabase.com) and click **Restore**.                                                                                             |
-| "Etwas ist schiefgelaufen"                     | Reload the page. If it stays, the grey box shows the technical reason: take a screenshot of it, it says what failed.                                                                                                          |
+| What you see                                   | What to do                                                                                                                                                                                    |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Noch nicht mit der Datenbank verbunden"       | The red box says which value is wrong. Fix it in Vercel → **Settings → Environment Variables** (type **Config**; delete a Secret and add it again), then build the site again (next row).     |
+| Still the old state after changing a variable  | The values are built into the site, so they only apply to a new build: **Deployments → ⋯** (top right) **→ Create Deployment**, type `main`, confirm, wait for **Ready** and reload the page. |
+| "E-Mail oder Passwort stimmt nicht"            | Check in Supabase → **Authentication → Users** that the user exists and is confirmed. To set a new password, delete the user and create it again.                                             |
+| "Keine Bearbeitungsrechte" after signing in    | The e-mail at the end of `schema.sql` differs from the login. In the SQL Editor, run `insert into public.admins (email) values ('your@email');` with the right address.                       |
+| "Keine Verbindung zur Datenbank" after a while | The free Supabase project paused after a week without use. Open it on [supabase.com](https://supabase.com) and click **Restore**.                                                             |
+| "Etwas ist schiefgelaufen"                     | Reload the page. If it stays, the grey box shows the technical reason: take a screenshot of it, it says what failed.                                                                          |
 
 ### 3. Share it with the team
 

@@ -56,7 +56,7 @@ const de = {
       "Kostenloses Projekt auf supabase.com anlegen.",
       "Die Datei supabase/schema.sql im SQL Editor ausführen (vorher die eigene E-Mail-Adresse eintragen).",
       "In Vercel unter Settings → Environment Variables die Variablen NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY mit dem Typ „Config“ eintragen. Eine Variable vom Typ „Secret“ lässt sich nicht umstellen: löschen und neu anlegen.",
-      "Unter Deployments beim neuesten Eintrag ⋯ → Redeploy wählen. Die Werte werden beim Bauen in die Seite übernommen.",
+      "Unter Deployments oben rechts ⋯ → Create Deployment wählen, main eingeben und bestätigen. Die Werte werden erst beim Bauen in die Seite übernommen.",
     ],
   },
   crash: {
@@ -310,7 +310,7 @@ const ar: Dictionary = {
       "أنشئ مشروعًا مجانيًا على supabase.com.",
       "نفّذ الملف supabase/schema.sql في SQL Editor (بعد كتابة بريدك الإلكتروني فيه).",
       "في Vercel من Settings → Environment Variables أضف المتغيرين NEXT_PUBLIC_SUPABASE_URL و NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY بالنوع «Config». المتغير من النوع «Secret» لا يمكن تغيير نوعه: احذفه وأضفه من جديد.",
-      "من Deployments اختر عند أحدث نشر ⋯ ثم Redeploy، لأن القيم تُدمج في الصفحة أثناء البناء.",
+      "من Deployments اضغط ⋯ في الأعلى ثم Create Deployment، واكتب main ثم أكّد، لأن القيم تُدمج في الصفحة أثناء البناء فقط.",
     ],
   },
   crash: {
