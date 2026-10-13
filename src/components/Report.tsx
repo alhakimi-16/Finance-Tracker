@@ -495,8 +495,9 @@ function EntryList({ entries, balances }: { entries: Entry[]; balances: Map<stri
   return (
     <section className="mt-10">
       <h2 className="text-xl font-black">{t.report.entries}</h2>
+      {/* wide enough to scroll on phones; on paper it must fit the page instead */}
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-2xl text-sm">
+        <table className="w-full min-w-2xl text-sm print:min-w-0">
           <thead>
             <tr className="border-b-2 border-gold-500 text-ink-soft">
               <th scope="col" className="py-2 pe-3 text-start font-bold">

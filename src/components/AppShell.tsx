@@ -28,7 +28,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href={base} className="flex min-w-0 items-center gap-3 sm:gap-5">
             {/* the logo has black lettering, so in dark mode it sits on a paper-coloured plate */}
             <span className="shrink-0 rounded-2xl bg-logo-plate p-0 dark:p-1.5">
-              <Image src="/logo.png" alt={t.brand.logoAlt} width={148} height={182} priority className="h-16 w-auto sm:h-24" />
+              <Image
+                src="/logo.png"
+                alt={t.brand.logoAlt}
+                width={148}
+                height={182}
+                priority
+                className="h-16 w-auto sm:h-24"
+              />
             </span>
             <span className="min-w-0">
               <span className="block text-xs leading-snug font-semibold text-gold-700 sm:text-base">
@@ -68,7 +75,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           {configured &&
             (account ? (
               <div className="flex min-w-0 items-center gap-2 text-sm">
-                <span className="min-w-0 truncate text-muted max-sm:hidden" title={fill(t.login.signedIn, { email: account.email })}>
+                <span
+                  className="min-w-0 truncate text-muted max-sm:hidden"
+                  title={fill(t.login.signedIn, { email: account.email })}
+                >
                   {account.email}
                 </span>
                 <button
@@ -94,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:p-0">{children}</main>
 
       <footer className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-4 pb-8 sm:px-6 print:hidden">
         <p className="text-sm font-semibold text-gold-700 sm:text-lg">{t.brand.footer}</p>
